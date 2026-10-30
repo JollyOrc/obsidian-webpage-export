@@ -1,0 +1,60 @@
+name: Ticket (maintainers)
+description: A work item derived from a user story (CLAUDE.md, step 3).
+title: '[Title]'
+labels: [ticket]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Add the story label `US-NNN`. Close the issue as completed when the
+        definition of done holds.
+  - type: input
+    id: story
+    attributes:
+      label: User story
+      placeholder: US-NNN, ACs addressed AC-N, AC-N
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to be done and why, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: acs
+    attributes:
+      label: Acceptance criteria (from the user story)
+      description: Copied verbatim, so that the ticket is self-contained.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Implementation notes
+      description: Known approach, constraints, gotchas. Leave blank if none.
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests
+      description: The test stubs that must exist and pass before the ticket is closed (SCAR-003).
+      placeholder: '- `tests/unit/...test.ts` — `test name` (AC-N)'
+    validations:
+      required: true
+  - type: textarea
+    id: scar-check
+    attributes:
+      label: SCAR check
+      description: Gate G3, the Prevention list of every SCAR, item by item.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      value: |
+        - [ ] All listed tests pass.
+        - [ ] Full quality gate passes.
+        - [ ] User story file updated if ACs were refined during implementation.
+        - [ ] `docs/technical/tests.md` AC-to-test map updated.

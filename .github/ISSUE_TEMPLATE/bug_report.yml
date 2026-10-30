@@ -1,0 +1,52 @@
+name: Bug report
+description: The export did something wrong, or a page does not look as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. A small note that shows the problem helps
+        most; please leave out anything private.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Settings → Community plugins → Webpage HTML Export.
+    validations:
+      required: true
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian version and operating system
+      placeholder: Obsidian 1.14.4, macOS 26
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, from choosing the files to the exported page?
+      placeholder: |
+        1. Open the note below.
+        2. Export it with the settings below.
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: Smallest note that shows it
+      description: The Markdown of the note, and the plugins whose blocks it uses (e.g. Text Mapper, Leaflet).
+      render: markdown
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include the export log, and a screenshot of the page if it helps.
+    validations:
+      required: true

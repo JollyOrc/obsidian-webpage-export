@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest something the export should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [backlog](https://github.com/JollyOrc/obsidian-webpage-export/issues?q=label%3Abacklog)
+        first; if your idea is there, add to that issue. A request becomes a
+        user story with concrete examples before any work starts.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to achieve?
+      description: The problem with your exported site, not the solution yet.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example
+      description: A short note, and what the exported page should show for it.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today instead
+      description: Optional. A workaround or another tool.
