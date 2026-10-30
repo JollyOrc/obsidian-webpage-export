@@ -34,3 +34,12 @@ dist
 todo.txt
 vault/
 output/
+
+# init.d working state (CLAUDE.md rule 9)
+docs/state/
+
+# US-001 AC-5: the generated fixture vault is committed (upstream's `vault/`
+# above would ignore it); AC-7, AC-9: third-party plugins and run output are not.
+!tests/fixtures/vault/
+tests/fixtures/vault/.obsidian/plugins/
+tests/.output/

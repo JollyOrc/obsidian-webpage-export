@@ -1,3 +1,8 @@
+# US-001 AC-8: `plugin` (default) builds the plugin inside the image, as
+# upstream; `plugin-local` takes the local build from the BuildKit context
+# `localplugin` (.dockerignore excludes main.js from the main context).
+ARG PLUGIN_STAGE=plugin
+
 FROM node:20-alpine AS plugin
 
 # copy the assets and source code
@@ -14,6 +19,11 @@ RUN npm run build
 
 # copy the rest
 COPY manifest.json styles.css /app/
+
+FROM scratch AS plugin-local
+COPY --from=localplugin main.js manifest.json styles.css /app/
+
+FROM ${PLUGIN_STAGE} AS plugin-final
 
 FROM rust:1.89.0 AS injector
 
@@ -65,7 +75,7 @@ RUN mkdir -p /opt/obsidian \
 COPY docker/* /
 
 # Copy build output
-COPY --from=plugin \
+COPY --from=plugin-final \
   /app/main.js \
   /app/styles.css \
   /app/manifest.json \

@@ -1,0 +1,4 @@
+# US-001: generated or third-party content is not formatted.
+tests/fixtures/vault/
+tests/.output/
+node_modules/

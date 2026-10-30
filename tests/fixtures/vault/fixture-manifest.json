@@ -1,0 +1,135 @@
+{
+	"seed": 20261030,
+	"notes": [
+		{
+			"path": "Composed/Big Page.md",
+			"constructs": {
+				"headingEmbeds": 8,
+				"markdownLinkEmbeds": 8,
+				"images": 1,
+				"sections": 15
+			}
+		},
+		{
+			"path": "Embeds/Embed In Callout.md",
+			"constructs": {
+				"callouts": 1,
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Embed In List.md",
+			"constructs": {
+				"listItems": 3,
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Heading Embed.md",
+			"constructs": {
+				"headingEmbeds": 2
+			}
+		},
+		{
+			"path": "Embeds/Markdown Link Embed.md",
+			"constructs": {
+				"markdownLinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Meta Bind Embed.md",
+			"constructs": {
+				"metaBindEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Nested Embed.md",
+			"constructs": {
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Wikilink Embed.md",
+			"constructs": {
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Long Note.md",
+			"constructs": {
+				"headings": 7
+			}
+		},
+		{
+			"path": "Maps/Map 1.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 2.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 3.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 4.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 5.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 6.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 7.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map 8.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 12
+			}
+		},
+		{
+			"path": "Maps/Map Alpha.md",
+			"constructs": {
+				"textMapperBlocks": 1,
+				"hexes": 3
+			}
+		},
+		{
+			"path": "Plain/Control.md",
+			"constructs": {}
+		},
+		{
+			"path": "Plain/Snippet.md",
+			"constructs": {}
+		}
+	]
+}

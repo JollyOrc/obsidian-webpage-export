@@ -1,0 +1,25 @@
+{
+	"plugins": [
+		{
+			"id": "text-mapper",
+			"version": "1.1.0",
+			"repo": "modality/obsidian-text-mapper",
+			"licence": "MIT",
+			"files": {
+				"main.js": "64dfc8670a92f1b6694f0cb043a9e9a1b862df6528b4ee8bc9255285eb2c44c7",
+				"manifest.json": "35ddf54fa4aababf6d96902adf38d281171bcf8cba5028dbf04a713bf23a7e3b"
+			}
+		},
+		{
+			"id": "obsidian-meta-bind-plugin",
+			"version": "1.5.1",
+			"repo": "mProjectsCode/obsidian-meta-bind-plugin",
+			"licence": "GPL-3.0",
+			"files": {
+				"main.js": "d328bfaa4d1f48259074b28f249a9f911ea34327e7e1123d8a1f2afc3e9784b3",
+				"manifest.json": "3c1dff1e36a17811851f3c7446b875cf901288b73261caea61bc0d440d3c4325",
+				"styles.css": "97069e183224c55428fe0b983d42435aa2cd4ac14d0f50186138b4751ad55d61"
+			}
+		}
+	]
+}
