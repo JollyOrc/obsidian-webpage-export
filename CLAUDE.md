@@ -6,33 +6,32 @@
 
 This repository is the author's fork (`JollyOrc/obsidian-webpage-export`) of
 [KosmosisDire/obsidian-webpage-export](https://github.com/KosmosisDire/obsidian-webpage-export),
-the Obsidian plugin "Webpage HTML Export" (`manifest.json` 1.9.2). It exports
-notes of a vault as a static website.
+the Obsidian plugin "Webpage HTML Export". It exports notes of a vault as a
+static website. The fork is based on upstream 1.9.2 (`78c973d`); its first
+release is 1.10.0 (2026-10-31, `releases/`).
 
 The fork exists to export the chosen parts of the author's vault
-`/Users/jollyorc/Documents/Raiders of Arismyth Rules` cleanly to
-<https://roa.5f9.de>. Today the export times out or fails at content that
-other plugins draw, notably `text-mapper` blocks (36 in the vault), and also
-uses Leaflet, Excalidraw, Dataview, Meta Bind and Calendarium content. The
-goal is to render such blocks to static SVG at export time, reusing work from
-the author's sibling projects:
+`/Users/jollyorc/Documents/Raiders of Arismyth Rules` completely and
+without freezing to <https://roa.5f9.de>. Upstream's export froze Obsidian
+and dropped embedded content in that vault; US-002 replaced the reading-view
+render with an off-screen `MarkdownRenderer.render` path. The vault also uses
+content other plugins draw (`text-mapper`, Leaflet, Excalidraw, Dataview,
+Meta Bind, Calendarium); those blocks are exported as the plugins draw them.
+Rendering `text-mapper` blocks to static SVG (reusing
+`../ObsidianVaultCompiler`) is **out of scope** for this fork (user decision
+2026-10-31).
 
-- `../ObsidianVaultCompiler` (<https://github.com/JollyOrc/ObsidianVaultCompiler>):
-  `plugin/src/textmapper.ts` draws a `text-mapper` block with the installed
-  Text Mapper plugin (`renderMapSvg`), cleans the SVG (`prepareMapSvg`) and
-  embeds fonts; its stories US-4.x specify this behaviour.
-- `../Obsidian2Typst` (<https://github.com/JollyOrc/Obsidian2Typst>): the
-  development process, the SCARs, the init.d state, and SVG size handling
-  (`src/core/assets/image-size.ts`).
-
-Code reused from them is listed in `docs/technical/dependencies.md` with its
-origin, and keeps its documented transforms (SCAR-001).
+The development process, the SCARs and the init.d state come from the
+author's sibling project `../Obsidian2Typst`
+(<https://github.com/JollyOrc/Obsidian2Typst>). Code reused from other
+projects is listed in `docs/technical/dependencies.md` with its origin, and
+keeps its documented transforms (SCAR-001).
 
 The vault `Raiders of Arismyth Rules` in this location is a **working copy**
 of the author's original (user statement 2026-10-30): Claude may change it for
 measurements and manual checks under the conditions of rule 2. No automated
-test reads it; automated tests use a generated synthetic fixture vault (to be
-specified in a story; see SCAR-027 when it replaces anything).
+test reads it; automated tests use the generated synthetic fixture vault
+`tests/fixtures/vault/` (US-001; changed only through its generator).
 
 Orientation files:
 

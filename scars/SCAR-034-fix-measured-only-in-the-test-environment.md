@@ -43,6 +43,12 @@ measurement of the chosen approach.
   reproduce it.
 - Keep the diagnosis builds cheap to hand over (own version, per-step log,
   heartbeat), so a desktop measurement costs minutes, not a ticket.
+- A pipeline that has never run (a release workflow) is run once before it
+  is needed, and its environment is compared with the measured local one:
+  runtime version, clone depth, token permissions, terminal colouring.
+  Example (2026-10-31, release 1.10.0): the first tag needed three runs —
+  shallow clone, Node 20 without type stripping plus coloured tool output,
+  and a read-only token — each found only by the run itself.
 - Applies next to: freezes and hangs, timing and rendering in the live
   application, platform-specific file handling, anything a container or a
   headless run cannot show.
