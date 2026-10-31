@@ -11,6 +11,12 @@
 			}
 		},
 		{
+			"path": "Composed/Folded Callout.md",
+			"constructs": {
+				"callouts": 1
+			}
+		},
+		{
 			"path": "Embeds/Embed In Callout.md",
 			"constructs": {
 				"callouts": 1,
@@ -21,6 +27,12 @@
 			"path": "Embeds/Embed In List.md",
 			"constructs": {
 				"listItems": 3,
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Embeds/Front Embed.md",
+			"constructs": {
 				"wikilinkEmbeds": 1
 			}
 		},
@@ -43,6 +55,12 @@
 			}
 		},
 		{
+			"path": "Embeds/Missing Heading Embed.md",
+			"constructs": {
+				"headingEmbeds": 1
+			}
+		},
+		{
 			"path": "Embeds/Nested Embed.md",
 			"constructs": {
 				"wikilinkEmbeds": 1
@@ -53,6 +71,28 @@
 			"constructs": {
 				"wikilinkEmbeds": 1
 			}
+		},
+		{
+			"path": "Failures/Broken Map.md",
+			"constructs": {
+				"textMapperBlocks": 1
+			}
+		},
+		{
+			"path": "Failures/Embed Broken Map.md",
+			"constructs": {
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Failures/Embed Empty Note.md",
+			"constructs": {
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Failures/Empty Note.md",
+			"constructs": {}
 		},
 		{
 			"path": "Long Note.md",
@@ -126,6 +166,12 @@
 		{
 			"path": "Plain/Control.md",
 			"constructs": {}
+		},
+		{
+			"path": "Plain/Front Note.md",
+			"constructs": {
+				"frontmatter": 1
+			}
 		},
 		{
 			"path": "Plain/Snippet.md",

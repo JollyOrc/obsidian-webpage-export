@@ -125,16 +125,6 @@ describe('US-001 AC-13: what the single run must contain', () => {
 	});
 });
 
-describe('US-001 AC-14: the fixture reproduces the defect it is for', () => {
-	it(
-		'US-001 AC-14: with --runs 3, Big Page goes to the fallback in at least 1 of 3 runs',
-		async () => {
-			const r = await runHeadless({ image: tag, vault: FIXTURE, runs: 3 });
-			expect(r.runs.every((x) => x.status === 'ok')).toBe(true);
-			const fb = r.summary['Composed/Big Page.md'].fallback;
-			console.log(`US-001 AC-14: Composed/Big Page.md ${fb}, Obsidian ${r.obsidianVersion}`);
-			expect(Number(/fallback: (\d+)\/3/.exec(fb)?.[1] ?? 0)).toBeGreaterThanOrEqual(1);
-		},
-		3 * RUN_LIMIT,
-	);
-});
+// US-001 AC-14 withdrawn (US-002 amendment 1, 2026-10-31): the export no
+// longer renders in the reading view, so "sections not drawn" cannot occur
+// and `maxPreviewHeight` no longer exists.

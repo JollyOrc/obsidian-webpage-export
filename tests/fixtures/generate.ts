@@ -250,6 +250,62 @@ function buildFiles(): FixtureFile[] {
 		constructs: {},
 	});
 
+	// US-002 AC-7 F10: an embedded note whose only block fails (Text Mapper
+	// cannot read the include); measured to export as an empty embed.
+	files.push({
+		path: 'Failures/Broken Map.md',
+		content: '```text-mapper\ninclude no-such-file.txt\n```\n',
+		constructs: { textMapperBlocks: 1 },
+	});
+	files.push({
+		path: 'Failures/Embed Broken Map.md',
+		content: `FX-F10 ${paragraph(1)}\n\n![[Broken Map]]\n\n${paragraph(1)}\n`,
+		constructs: { wikilinkEmbeds: 1 },
+	});
+
+	// US-002 AC-7 F11: an embedded note that is genuinely empty (D6: no
+	// placeholder); it exports as the same empty embed as F10.
+	files.push({ path: 'Failures/Empty Note.md', content: '', constructs: {} });
+	files.push({
+		path: 'Failures/Embed Empty Note.md',
+		content: `FX-F11 ${paragraph(1)}\n\n![[Empty Note]]\n\n${paragraph(1)}\n`,
+		constructs: { wikilinkEmbeds: 1 },
+	});
+
+	// US-002 AC-11, AC-14 F12: a note with frontmatter (its page's own
+	// properties move before the sizer; measured in the A4 spike).
+	files.push({
+		path: 'Plain/Front Note.md',
+		content:
+			'---\ntitle: Front Note\ntags:\n  - probe\n---\n' +
+			'FX-F12 the body of a note with frontmatter, after its properties.\n\n## Part\n\nMore text FX-F12B.\n',
+		constructs: { frontmatter: 1 },
+	});
+
+	// US-002 AC-14 F13: an embed of the frontmatter note (the unrestricted
+	// frontmatter step emptied such embeds in the vault).
+	files.push({
+		path: 'Embeds/Front Embed.md',
+		content:
+			'FX-F13-BEFORE a note embedding a note with frontmatter.\n\n![[Front Note]]\n\nFX-F13-AFTER the end.\n',
+		constructs: { wikilinkEmbeds: 1 },
+	});
+
+	// US-002 AC-13 F14: an embed of a heading that does not exist.
+	files.push({
+		path: 'Embeds/Missing Heading Embed.md',
+		content:
+			'FX-F14-BEFORE a heading embed whose heading does not exist.\n\n![[Long Note#No Such Heading]]\n\nFX-F14-AFTER the end.\n',
+		constructs: { headingEmbeds: 1 },
+	});
+
+	// US-002 AC-15 F15: a callout folded in the source.
+	files.push({
+		path: 'Composed/Folded Callout.md',
+		content: `${paragraph(1)}\n\n> [!note]- Folded\n> FX-F15 ${paragraph(1)}\n\n${paragraph(1)}\n`,
+		constructs: { callouts: 1 },
+	});
+
 	// US-001 AC-7: both third-party plugins enabled; their files are fetched
 	// by `npm run fixtures:plugins` and never committed.
 	files.push({

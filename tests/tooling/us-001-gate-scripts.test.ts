@@ -85,8 +85,8 @@ describe('US-001 AC-1: typecheck', () => {
 });
 
 describe('US-001 AC-2: lint', () => {
-	it('US-001 AC-2: tools/lint-baseline.json holds the measured upstream count 478', () => {
-		expect(JSON.parse(readFileSync('tools/lint-baseline.json', 'utf8'))).toEqual({ upstream: 478 });
+	it('US-001 AC-2: tools/lint-baseline.json holds the measured upstream count 465 (lowered at US-002 #6 and #9)', () => {
+		expect(JSON.parse(readFileSync('tools/lint-baseline.json', 'utf8'))).toEqual({ upstream: 465 });
 	});
 
 	it(
@@ -133,14 +133,14 @@ describe('US-001 AC-2: lint', () => {
 	);
 
 	it(
-		'US-001 AC-2: one more upstream finding (479) fails with the baseline message',
+		'US-001 AC-2: one more upstream finding (466) fails with the baseline message',
 		() => {
 			// `no-var` is reported by the current upstream config (eslint:recommended).
 			const r = withProbe(`src/plugin/__probe_${process.pid}.ts`, 'var probe = 1; export { probe };\n', () =>
 				npm('lint'),
 			);
 			expect(r.status).not.toBe(0);
-			expect(r.stdout + r.stderr).toContain('upstream lint findings 479 > baseline 478');
+			expect(r.stdout + r.stderr).toContain('upstream lint findings 466 > baseline 465');
 		},
 		LIMIT,
 	);

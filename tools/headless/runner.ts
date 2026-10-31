@@ -126,7 +126,8 @@ type Manifest = { notes: { path: string }[] };
  * into it) is mounted with a fresh `tests/.output/<run-id>/`, the injected
  * script of AC-8b replaces the image's, the container is limited to
  * `limitMs` (AC-10) and killed by name at the limit; the copy is removed
- * afterwards. The vault itself is only read. Requires the third-party plugins
+ * afterwards. `exportOptions` (US-002) are written as the plugin's
+ * `data.json` into the copy. The vault itself is only read. Requires the third-party plugins
  * in the vault (`npm run fixtures:plugins`).
  */
 export async function runHeadless(opts: {
@@ -134,6 +135,7 @@ export async function runHeadless(opts: {
 	vault: string;
 	runs?: number;
 	limitMs?: number;
+	exportOptions?: Record<string, unknown>;
 }): Promise<HeadlessResult> {
 	const runsWanted = opts.runs ?? 1;
 	const plugins = join(opts.vault, '.obsidian', 'plugins');
@@ -150,6 +152,15 @@ export async function runHeadless(opts: {
 		mkdirSync(outputDir, { recursive: true });
 		const mountedVault = mkdtempSync(join(tmpdir(), 'owe-vault-'));
 		cpSync(opts.vault, mountedVault, { recursive: true });
+		if (opts.exportOptions) {
+			// US-002 AC-6, AC-10: export options reach the plugin as its data.json
+			// (merged into the defaults, measured); the plugin files go beside it
+			// so the image's start script does not skip the folder.
+			const dir = join(mountedVault, '.obsidian', 'plugins', 'webpage-html-export');
+			mkdirSync(dir, { recursive: true });
+			for (const f of PLUGIN_FILES) cpSync(f, join(dir, f));
+			writeFileSync(join(dir, 'data.json'), JSON.stringify({ exportOptions: opts.exportOptions }));
+		}
 		const logPath = join(outputDir, 'container.log');
 		const name = `owe-run-${process.pid}-${i + 1}`;
 		try {

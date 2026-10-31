@@ -21,6 +21,7 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@eslint/js": "^9.1.1",
+		"@types/jsdom": "21.1.7",
 		"@types/mime": "^3.0.4",
 		"@types/node": "20.19.9",
 		"@types/postcss-safe-parser": "^5.0.4",
@@ -32,6 +33,7 @@
 		"esbuild": "0.14.47",
 		"eslint": "^8.57.0",
 		"globals": "^15.0.0",
+		"jsdom": "26.1.0",
 		"obsidian": "^1.4.11",
 		"obsidian-dataview": "^0.5.64",
 		"prettier": "3.9.10",
