@@ -122,7 +122,7 @@ any non-obvious constraints (clamping, ordering, side effects).
 2. Never modify source or fixture files; only write to configured output paths.
    In this project that means: the exporter never modifies the user's notes,
    attachments or plugin data, and a fixture vault changes only through its
-   generator. Generated HTML, SVG and asset files go only to the configured
+   generator. Generated HTML and asset files go only to the configured
    export folder.
    **Working-copy vault (user decisions 2026-10-30):** Claude may change the
    vault `Raiders of Arismyth Rules` (notes, settings, `data.json`, installed
@@ -137,14 +137,14 @@ any non-obvious constraints (clamping, ordering, side effects).
 4. When a behaviour is ambiguous, surface the ambiguity to the user rather than
    guessing. A wrong assumption costs more to fix than a clarifying question.
 5. Keep generated and derived files clearly separated from source files.
-6. Generated HTML and SVG must be **valid** and self-contained: no `<script>`
-   or event-handler attribute from a plugin's rendering reaches an exported
-   SVG, and every piece of user text placed into markup by our own code passes
-   through one escaping function; a code path that emits user text without it
-   is a bug.
-7. Rendering of plugin blocks is **deterministic**: the same block source,
-   plugin version and settings always produce byte-identical SVG, and an
-   unchanged block is not rendered again on the next export.
+6. Generated HTML must be **valid**: no `<div>` inside a `<p>` (US-002
+   AC-4), and every piece of user text that our own code places into markup
+   is set as text (`textContent`, attribute values), never as markup; a code
+   path that inserts user text as HTML is a bug.
+7. Our own transformations are **deterministic**: the functions in
+   `src/core` give the same output for the same input, with no clock,
+   random value or global state; what Obsidian and its plugins draw is
+   exported as they draw it.
 8. Export problems (a plugin block that fails or times out, a missing plugin,
    unresolved links, missing attachments) are reported as warnings with a
    source location; one failing block never aborts the export of the other
@@ -231,23 +231,24 @@ any non-obvious constraints (clamping, ordering, side effects).
 
 The upstream code base (`src/plugin`, `src/frontend`, `src/shared`) is kept as
 close to upstream as practical, so that upstream fixes can still be merged.
-New behaviour of the fork follows the split of the sibling projects
-(proposed; confirmed or amended in the first user story):
+New behaviour of the fork follows this split (confirmed by US-001 and
+US-002):
 
 | Module | Responsibility | Side effects |
 |--------|----------------|--------------|
-| `src/core/**` (new) | Pure logic: finding plugin blocks in a note, block hashing and caching keys, SVG clean-up, placeholders, warnings | none |
-| `src/plugin/**` (upstream + thin additions) | Obsidian API: drawing a block with the installed plugin, reading the vault, writing the export, settings, notices | file I/O, UI |
+| `src/core/**` (new) | Pure logic on the rendered DOM: embed paragraphs, placeholders and their warnings, empty targets, section wrappers, the reading view's marks, the choice of frontmatter | none |
+| `src/plugin/**` (upstream + thin additions) | Obsidian API: rendering notes (`MarkdownRenderer.render`), resolving links and subpaths, reading the vault, writing the export, settings, notices | file I/O, UI |
 
 Invariants:
 
 - `src/core/**` must **not** import from `obsidian`, Electron or any Node/DOM
-  I/O API. Plugin and DOM access is injected as interfaces (as
-  `TextMapperPluginLike` and `MapDom` in ObsidianVaultCompiler). This keeps
-  the core unit-testable in plain Node.
+  I/O API. Obsidian access is injected as functions (as the subpath
+  resolver passed to `addPreviewMarks`, or `isTargetEmpty` passed to
+  `markUnexportedEmbeds`). This keeps the core unit-testable with jsdom.
 - Side effects occur only in `src/plugin`.
-- Every render of a third-party plugin block has a time limit and a fallback;
-  no plugin block can stall the export (rule 8).
+- Waiting for a note's embeds and plugin blocks has a time limit (US-002
+  AC-3: 5 000 ms); what is still empty then is reported (rule 8), so no
+  block can stall the export.
 - Changes to upstream files are small and each one is listed in
   `docs/technical/dependencies.md` ("Changes to upstream files").
 - Behaviour that is configurable lives in the plugin settings, not in
