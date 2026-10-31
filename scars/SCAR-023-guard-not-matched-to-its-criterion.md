@@ -84,5 +84,10 @@ more blocks the next correct change.
   HTML reader's script sample had no `<`, so a mutant that read script
   content as markup survived; 4 of 7 inline scripts of a real exported page
   contain `<`; a test with that shape was added.
+- A DOM test input built from an HTML string goes through the parser,
+  which reshapes some markup (a block closes an open `<p>`); when the real
+  producer builds the DOM without parsing, the test builds it the same way.
+  Example (2026-10-31, #8): 7 unit tests failed on inputs the parser had
+  emptied, not on the code; `tests/support/dom.ts` builds the render's shape.
 - Applies next to: text checks over source files, guards over generated
   output, wiring tests, fakes of a framework.

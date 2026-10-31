@@ -44,5 +44,10 @@ gets.
 - A known gap that makes the output visibly incomplete (no fonts, no cover)
   is stated in the check and in the handover as a known limitation, or it is
   closed before the handover. Never leave it for the tester to find.
+- A replacement is compared with what it replaces by structure (each
+  embed's content, element counts per kind), not only by a sample of text.
+  Example (2026-10-30, US-002): a check of each note's first words passed a
+  renderer that emptied 4 embeds and dropped 1 457 heading arrows; a
+  per-page structure comparison found them.
 - Applies next to: previews, cover pages, headers and footers, fonts per role,
   anything that is judged by looking at it.

@@ -36,5 +36,9 @@ they were counted, offered as a choice, or replaced.
 - A scripted replace works from a reviewed list: the classes to replace, and a
   keep-list of matches that stay, each named by file and line; the run checks
   the keep-list after it.
+- A count of a plugin's output is read against that plugin's settings
+  before a difference is called a loss. Example (2026-10-30, US-002 G0):
+  1 082 fewer glossary links were reported as lost; the vault's Virtual
+  Linker setting `onlyLinkOnce` asked for exactly that (found by the user).
 - Applies next to: renames, removal of sensitive or quoted text, deprecations,
   anything found by a word list or a pattern.

@@ -40,6 +40,11 @@ structure differently (here: level `L − 1` is no longer the top level when
   the end-to-end test runs one composed note with non-default settings.
 - The dry run before a manual check uses every preset the check uses, not only
   the default one, and its output is read page by page against the rule.
+- A manual check step that depends on a setting reads the setting's value
+  where the check runs before the step is written. Example (2026-10-31,
+  US-002 M10): the folding step assumed `allowFoldingHeadings` on; the
+  author's vault has it off, so the site showed no arrows and AC-8 was
+  amended after the run.
 - Applies next to: page-number position and format (US-018), heading levels,
   numbering patterns, thresholds such as `cropWarningPercent`, column counts
   and any future per-preset rule.

@@ -54,6 +54,7 @@ done or manual-test handover.
 | [SCAR-031](SCAR-031-dev-dependency-change-alters-shipped-artefact.md) | Adding a development tool changes the artefact that ships | Dependencies / Release | Medium | G2, G4 |
 | [SCAR-032](SCAR-032-count-over-generated-output.md) | A count over a folder includes generated output | Verification / Tooling | Medium | G2, G4 |
 | [SCAR-033](SCAR-033-whole-tree-check-before-its-ticket.md) | A whole-tree check is assigned to a ticket that cannot make it green | Process / Specification | Low | G2 |
+| [SCAR-034](SCAR-034-fix-measured-only-in-the-test-environment.md) | A fix is measured only in the test environment and fails where the user runs it | Verification / Requirements | High | G1, G4 |
 
 ## Recurring themes
 
@@ -196,6 +197,11 @@ third-party files by path, and is measured with and without them present.
 **Whole-tree checks and ticket order** (SCAR-033)
 When tests are written, name for each whole-tree check the ticket after
 which it can be green.
+
+**Fixes measured where the failure happens** (SCAR-034)
+A failure seen only in the user's environment is fixed by an approach
+measured there before the story builds on it; every claim names the
+environment it was measured in.
 
 **Shared code underdocumented** (SCAR-001)
 A utility's secondary transforms (not just its primary purpose) must be
