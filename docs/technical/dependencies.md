@@ -37,6 +37,11 @@
   esbuild 0.14.47; Vitest 3's Vite 7.3.7 carries its own esbuild 0.28.2,
   the plugin keeps 0.14.47 (measured `npm ls esbuild`).
 - prettier 3.9.10 (exact).
+- jsdom 26.1.0 and @types/jsdom 21.1.7 (exact; US-002 D4): the Vitest
+  environment for DOM unit tests (`// @vitest-environment jsdom`). Chosen
+  after measuring: happy-dom 20.14.6 keeps a `<div>` inside a `<p>` when
+  parsing; jsdom moves it out as the HTML specification and Chromium do.
+  Bundle unchanged (`9baacf79…`), no installed version moved.
 - @types/node 20.19.9 (exact; was ^16.11.6): Vitest 3 needs ≥ 18; 22.x
   breaks upstream `tsc` (2 errors in `src/plugin/utils/path.ts`); 20.19.9
   and 18.19.130 compile.
@@ -83,6 +88,7 @@ and git-ignored:
 | `package.json` | devDependencies vitest, prettier, @types/node 20.19.9; dependency postcss pinned exact | US-001 |
 | `eslint.config.mjs` | upstream entries unchanged; added global ignores (`tests/fixtures/vault/**`, `tests/.output/**`) and the strict block for `src/core`, `tests`, `tools` (upstream count stays 478) | US-001 |
 | `.github/workflows/release.yaml`, `beta-release.yaml` | `npm ci` + `npm run gate:release` instead of `npm install` + `npm run build`; `docker-image` `needs: build` | US-001 |
+| `src/plugin/render-api/render-api.ts` | Main path (`renderMarkdownView`): `useFallbackRenderer` goes to the fallback, every other note to the new `renderDetached` (Obsidian's `MarkdownRenderer.render` into an off-screen element, wait for embeds and plugin blocks, Dataview and canvas as upstream, `addPreviewMarks`, `wrapSections`, `documentClass`); the reading-view main path after the fallback check and its now unused `Utils` import removed (no automatic fallback, no growth); `resolveEmbedSubpath` for the marks; fallback: waits until every embed has content; `postProcessHTML`: `unwrapEmbedParagraphs` replaces the p-tag block, `markUnexportedEmbeds` with an empty-target check, the frontmatter step takes `pageFrontmatter` and `removeEmbedFrontmatter` removes embedded frontmatter, optional `sourcePath` parameter (passed by `renderFile`) | US-002 (#5, #6, #9) |
 | `Dockerfile` | `ARG PLUGIN_STAGE=plugin` (default: build inside, as upstream) and stage `plugin-local` (BuildKit context `localplugin`); final copy from `plugin-final` | US-001 |
 | `.gitignore` | `tests/fixtures/vault/.obsidian/plugins/`, `tests/.output/`, `docs/state/` | US-001, set-up |
 | `.github/ISSUE_TEMPLATE/*` | Upstream bug and feature forms replaced by the fork's ticket, bug and feature forms | — (environment set-up, 2026-10-30) |

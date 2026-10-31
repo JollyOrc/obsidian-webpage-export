@@ -1,16 +1,21 @@
 import { MarkdownRendererOptions } from "./api-options";
-import { Component, Notice, WorkspaceLeaf, MarkdownRenderer as ObsidianRenderer, MarkdownPreviewView, loadMermaid, TFile, MarkdownView, View, MarkdownPreviewRenderer, TAbstractFile, TFolder, Setting } from "obsidian";
+import { Component, Notice, WorkspaceLeaf, MarkdownRenderer as ObsidianRenderer, MarkdownPreviewView, loadMermaid, TFile, MarkdownView, View, MarkdownPreviewRenderer, TAbstractFile, TFolder, Setting, resolveSubpath } from "obsidian";
 import { TabManager } from "src/plugin/utils/tab-manager";
 import * as electron from 'electron';
 import { Settings, SettingsPage } from "src/plugin/settings/settings";
 import { Path } from "src/plugin/utils/path";
 import { SimpleFileListGenerator } from "src/plugin/features/simple-list-generator";
 import { DataviewRenderer } from "./dataview-renderer";
-import { Utils } from "../utils/utils";
 import { AssetLoader } from "../asset-loaders/base-asset";
 import { AssetType } from "../asset-loaders/asset-types";
 import { IconHandler } from "../utils/icon-handler";
 import { AssetHandler } from "../asset-loaders/asset-handler";
+import { unwrapEmbedParagraphs } from "src/core/embeds/paragraphs";
+import { isEmptyEmbed, markUnexportedEmbeds } from "src/core/embeds/placeholders";
+import { isEmptyTarget } from "src/core/embeds/empty-target";
+import { wrapSections } from "src/core/render/sections";
+import { addPreviewMarks, documentClass, SubpathKind } from "src/core/render/marks";
+import { pageFrontmatter, removeEmbedFrontmatter } from "src/core/render/frontmatter";
 
 export namespace MarkdownRendererAPI {
 	export const viewableMediaExtensions = ["png", "jpg", "jpeg", "svg", "gif", "bmp", "ico", "mp4", "mov", "avi", "webm", "mpeg", "mp3", "wav", "ogg", "aac", "pdf", "html", "htm", "json", "txt", "yaml"];
@@ -46,7 +51,7 @@ export namespace MarkdownRendererAPI {
 		options = Object.assign(new MarkdownRendererOptions(), options);
 		const result = await _MarkdownRendererInternal.renderFile(file, options);
 		if (!result) return;
-		if (options.postProcess) await _MarkdownRendererInternal.postProcessHTML(result.contentEl, options);
+		if (options.postProcess) await _MarkdownRendererInternal.postProcessHTML(result.contentEl, options, file.path);
 		return result;
 	}
 
@@ -367,6 +372,11 @@ export namespace _MarkdownRendererInternal {
 		// @ts-ignore
 		await Promise.all(promises);
 
+		// US-002 AC-6: embedded notes load after their section; wait until every
+		// embed shows content before the sections are copied (measured 50–55 ms).
+		await waitUntil(() => sections.every(s => !Array.from(s.el.querySelectorAll(".markdown-embed")).some(isEmptyEmbed)) || checkCancelled(), 3000, 50);
+		if (checkCancelled()) return undefined;
+
 		// refold callouts
 		for (const callout of foldedCallouts) {
 			callout.style.display = "none";
@@ -407,6 +417,127 @@ export namespace _MarkdownRendererInternal {
 		return newMarkdownEl;
 	}
 
+	/**
+	 * US-002 | AC-12, AC-13: What an embed's `#subpath` resolves to in its
+	 * target, for `addPreviewMarks`.
+	 *
+	 * `src` is the embed's `src` attribute as the render writes it (the link as
+	 * written, URL-decoded; measured at #6). No subpath, a block subpath
+	 * (`#^id`) or a target that is not found → `none`; a subpath that
+	 * `resolveSubpath` finds as a heading → `heading`; one it does not find in
+	 * an existing target → `missing`. A link without a path before `#` points
+	 * into `sourcePath` itself.
+	 */
+	function resolveEmbedSubpath(src: string, sourcePath: string): SubpathKind {
+		const hash = src.indexOf("#");
+		if (hash < 0) return { kind: "none" };
+		const sub = src.slice(hash + 1);
+		if (sub.startsWith("^")) return { kind: "none" };
+		const linkpath = src.slice(0, hash).replace(/^(\.\.\/)+/, "").replace(/\.md$/, "");
+		const target = linkpath ? app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath) : app.vault.getFileByPath(sourcePath);
+		const cache = target ? app.metadataCache.getFileCache(target) : null;
+		if (!target || !cache) return { kind: "none" };
+		const resolved = resolveSubpath(cache, "#" + sub);
+		if (!resolved) return { kind: "missing", heading: sub, target: target.basename };
+		return resolved.type === "heading" ? { kind: "heading" } : { kind: "none" };
+	}
+
+	/**
+	 * US-002 | AC-3, AC-11, AC-12, AC-13, AC-15: Renders a note's Markdown off
+	 * screen with Obsidian's `MarkdownRenderer.render` and returns the page's
+	 * document element, as the reading-view path did.
+	 *
+	 * The render goes into a host element placed at left -100 000 px, 900 px
+	 * wide, never into the reading view (D7: growing the reading view froze
+	 * Obsidian, M05 to M07). Then, in this order: wait until no embed is empty
+	 * and no plugin block is empty (poll 50 ms, at most 5 000 ms; what stays
+	 * empty is AC-7's placeholder or upstream's plugin-block warning); Dataview
+	 * and canvas handling as upstream's main path; the reading view's marks
+	 * (`addPreviewMarks`); the copy into a sizer with section wrappers
+	 * (`wrapSections`, nodes cloned); host and component removed; title as
+	 * upstream. Mermaid is loaded first when absent. Returns undefined when the
+	 * export is cancelled.
+	 */
+	async function renderDetached(preview: MarkdownPreviewView, options: MarkdownRendererOptions): Promise<HTMLElement | undefined> {
+		const file = preview.file;
+
+		// @ts-ignore
+		if (!window.mermaid) {
+			await loadMermaid();
+		}
+
+		const markdown = await app.vault.cachedRead(file);
+		const host = document.body.createDiv();
+		host.style.position = "absolute";
+		host.style.left = "-100000px";
+		host.style.top = "0";
+		host.style.width = "900px";
+		host.classList.add("markdown-preview-view", "markdown-rendered");
+		const component = new Component();
+		component.load();
+		try {
+			await ObsidianRenderer.render(app, markdown, host, file.path, component);
+
+			// US-002 AC-3: embeds and plugin blocks fill in after the render returns
+			const pending = () =>
+				Array.from(host.querySelectorAll(".markdown-embed")).filter(isEmptyEmbed).length +
+				host.querySelectorAll("[class^='block-language-']:empty").length;
+			await waitUntil(() => pending() === 0 || checkCancelled(), 5000, 50);
+			if (checkCancelled()) return undefined;
+
+			for (const block of Array.from(host.querySelectorAll("[class^='block-language-']:empty"))) {
+				ExportLog.warning(`Plugin element ${block.className || block.parentElement?.className || "unknown"} from ${file.name} not rendered correctly!`);
+			}
+
+			// compile dataview
+			if (DataviewRenderer.isDataviewEnabled()) {
+				for (const dataviewInfo of DataviewRenderer.getDataViewsFromHTML(host)) {
+					await new DataviewRenderer(preview, file, dataviewInfo?.query, dataviewInfo.keyword).generate(dataviewInfo.preEl);
+				}
+			}
+
+			// convert canvas elements into images, as they lose their data when copied
+			for (const canvas of Array.from(host.querySelectorAll("canvas:not(.pdf-embed canvas)")) as HTMLCanvasElement[]) {
+				const canvasSuccess = await waitUntil(() => canvas.toDataURL().length > 100 || checkCancelled(), 1000, 16);
+				if (!canvasSuccess) continue;
+				const image = batchDocument.body.createEl("img");
+				image.src = canvas.toDataURL();
+				image.style.width = canvas.style.width || "100%";
+				image.style.maxWidth = "100%";
+				canvas.replaceWith(image);
+			}
+
+			addPreviewMarks(host, (src) => resolveEmbedSubpath(src, file.path));
+
+			// @ts-ignore
+			const newMarkdownEl = batchDocument.body.createDiv({ attr: { class: documentClass(preview.renderer?.previewEl?.className ?? "") } });
+			const newSizerEl = newMarkdownEl.createDiv({ attr: { class: "markdown-preview-sizer markdown-preview-section" } });
+			if (options.createPusherElement) {
+				newSizerEl.createDiv({ attr: { class: "markdown-pusher", style: "width: 1px; height: 0.1px; margin-bottom: 0px;" } });
+			}
+			wrapSections(host, newSizerEl);
+
+			// if we aren't keeping the view element then only keep the content of the sizer element
+			if (options.createDocumentContainer === false) {
+				newMarkdownEl.outerHTML = newSizerEl.innerHTML;
+			}
+
+			options.container?.appendChild(newMarkdownEl);
+
+			if (options.unifyTitleFormat) {
+				const title = await _MarkdownRendererInternal.getTitleForFile(file);
+				const icon = await _MarkdownRendererInternal.getIconForFile(file);
+				const iconSVG = (await MarkdownRendererAPI.renderMarkdownSimple(icon.icon)) ?? icon.icon;
+				_MarkdownRendererInternal.addTitle(options.container ?? newMarkdownEl, title.title, title.isDefault, iconSVG, icon.isDefault, file, options);
+			}
+
+			return newMarkdownEl;
+		} finally {
+			component.unload();
+			host.remove();
+		}
+	}
+
 	export async function renderMarkdownView(preview: MarkdownPreviewView, options: MarkdownRendererOptions): Promise<HTMLElement | undefined> {
 		// @ts-ignore
 		if (preview.show)
@@ -418,289 +549,9 @@ export namespace _MarkdownRendererInternal {
 			return renderMarkdownViewFallback(preview, options);
 		}
 
-		// @ts-ignore
-		const renderer: any = preview.renderer;
-
-		try {
-			await renderer.unfoldAllHeadings();
-			await renderer.unfoldAllLists();
-			await renderer.parseSync();
-		} catch (e) {
-			ExportLog.error(e, "Failed to unfold or parse renderer!");
-		}
-
-		// @ts-ignore
-		if (!window.mermaid) {
-			await loadMermaid();
-		}
-
-		const sections = renderer.sections as {
-			rendered: boolean;
-			height: number;
-			computed: boolean;
-			lines: number;
-			lineStart: number;
-			lineEnd: number;
-			used: boolean;
-			highlightRanges: number;
-			level: number;
-			headingCollapsed: boolean;
-			shown: boolean;
-			usesFrontMatter: boolean;
-			html: string;
-			el: HTMLElement;
-		}[];
-
-		// @ts-ignore
-		const newMarkdownEl = batchDocument.body.createDiv({
-			attr: {
-				// @ts-ignore
-				class: "obsidian-document " + (preview.renderer?.previewEl?.className ?? ""),
-			},
-		});
-		const newSizerEl = newMarkdownEl.createDiv({
-			attr: { class: "markdown-preview-sizer markdown-preview-section" },
-		});
-
-		if (!newMarkdownEl || !newSizerEl)
-			return failRender(
-				preview.file,
-				"Please specify a container element, or enable keepViewContainer!"
-			);
-
-		const previewEl: HTMLElement = renderer.previewEl;
-		const sizerEl: HTMLElement =
-			previewEl.querySelector(".markdown-preview-sizer") ?? previewEl;
-		previewEl.style.minHeight = sizerEl.style.minHeight;
-
-		await Utils.delay(16);
-
-		let rendered = false;
-		// @ts-ignore
-		preview.renderer.onRendered(() => {
-			console.log("Rendered");
-			rendered = true;
-		});
-
-		// @ts-ignore
-		preview.rerender(true);
-
-		await Utils.delay(5);
-
-		previewEl.style.minHeight = sizerEl.style.minHeight;
-
-		await Utils.delay(5);
-
-		// wait for rendering to finish using callback
-		let renderSuccess = await waitUntil(
-			() => rendered || checkCancelled(),
-			2000,
-			16
-		);
-		if (checkCancelled()) return undefined;
-		if (!renderSuccess)
-			return failRender(preview.file, "Failed to render preview!");
-
-		// @ts-ignore
-		const foldedCallouts: HTMLElement[] = [];
-		for (const section of sections) {
-			// unfold callouts
-			const folded = Array.from(
-				section.el.querySelectorAll(
-					".callout-content[style*='display: none']"
-				)
-			) as HTMLElement[];
-			for (const callout of folded) {
-				callout.style.display = "";
-			}
-			foldedCallouts.push(...folded);
-		}
-
-		await Utils.delay(5);
-
-		// wait until the sizer contains all the sections
-		ExportLog.log("Waiting for all sections to be counted...");
-		var sectionsSuccess = await waitUntil(
-			() => {
-				console.log(sizerEl.children.length, sections.length);
-				return (
-					sizerEl.children.length >= sections.length ||
-					checkCancelled()
-				);
-			},
-			4000,
-			5
-		);
-		if (checkCancelled()) return undefined;
-
-		if (!sectionsSuccess) {
-			console.log(
-				sizerEl.children.length,
-				sections.length,
-				sizerEl.children,
-				sections
-			);
-			ExportLog.warning(
-				"Failed to render all sections in file " +
-					preview.file.name +
-					", using fallback!"
-			);
-			return renderMarkdownViewFallback(preview, options);
-		}
-
-		await Utils.delay(50);
-
-		// compile dataview
-		if (DataviewRenderer.isDataviewEnabled())
-		{
-			const dataviewInfos = DataviewRenderer.getDataViewsFromHTML(
-				preview.containerEl
-			);
-			for (const dataviewInfo of dataviewInfos) {
-				await new DataviewRenderer(
-					preview,
-					preview.file,
-					dataviewInfo?.query,
-					dataviewInfo.keyword
-				).generate(dataviewInfo.preEl);
-			}
-		}
-
-		// wait for transclusions
-		ExportLog.log("Waiting for transclusions to render...");
-		await waitUntil(
-			() =>
-				!preview.containerEl.querySelector(
-					".markdown-preview-pusher"
-				) ||
-				preview.containerEl.querySelector(
-					".markdown-preview-pusher + *"
-				) != null ||
-				checkCancelled(),
-			2000,
-			5
-		);
-		if (checkCancelled()) return undefined;
-
-		if (
-			preview.containerEl.querySelector(".markdown-preview-pusher") &&
-			!preview.containerEl.querySelector(".markdown-preview-pusher + *")
-		) {
-			ExportLog.warning(
-				"Transclusions were not rendered correctly in file " +
-					preview.file.name +
-					"!"
-			);
-		}
-
-		// wait for generic plugins
-		ExportLog.log("Waiting for generic plugins to render...");
-		await waitUntil(
-			() =>
-				!preview.containerEl.querySelector(
-					"[class^='block-language-']:empty"
-				) || checkCancelled(),
-			2000,
-			16
-		);
-		if (checkCancelled()) return undefined;
-
-		// check for invalid plugin blocks
-		const invalidPluginBlocks = Array.from(
-			preview.containerEl.querySelectorAll(
-				"[class^='block-language-']:empty"
-			)
-		);
-		for (const block of invalidPluginBlocks) {
-			ExportLog.warning(
-				`Plugin element ${
-					block.className ||
-					block.parentElement?.className ||
-					"unknown"
-				} from ${preview.file.name} not rendered correctly!`
-			);
-		}
-
-		// convert canvas elements into images here because otherwise they will lose their data when moved
-		const canvases = Array.from(
-			preview.containerEl.querySelectorAll(
-				"canvas:not(.pdf-embed canvas)"
-			)
-		) as HTMLCanvasElement[];
-		for (const canvas of canvases) {
-			// wait until the canvas is rendered
-			ExportLog.log("Waiting for canvas-based plugin to render...");
-			let canvasSuccess = await waitUntil(
-				() => canvas.toDataURL().length > 100 || checkCancelled(),
-				1000,
-				16
-			);
-			if (!canvasSuccess) continue;
-
-			const data = canvas.toDataURL();
-
-			const image = batchDocument.body.createEl("img");
-			image.src = data;
-			image.style.width = canvas.style.width || "100%";
-			image.style.maxWidth = "100%";
-			canvas.replaceWith(image);
-		}
-
-		// refold callouts
-		for (const callout of foldedCallouts) {
-			callout.style.display = "none";
-		}
-
-		newSizerEl.empty();
-
-		// create the markdown-preview-pusher element
-		if (options.createPusherElement) {
-			newSizerEl.createDiv({
-				attr: {
-					class: "markdown-pusher",
-					style: "width: 1px; height: 0.1px; margin-bottom: 0px;",
-				},
-			});
-		}
-
-		newSizerEl.innerHTML = sizerEl.innerHTML;
-
-		// get banner plugin banner and insert it before the sizer element
-		const banner = preview.containerEl.querySelector(
-			".obsidian-banner-wrapper"
-		);
-		if (banner) {
-			newSizerEl.before(banner);
-		}
-		// if we aren't keeping the view element then only keep the content of the sizer element
-		if (options.createDocumentContainer === false) {
-			newMarkdownEl.outerHTML = newSizerEl.innerHTML;
-		}
-
-		options.container?.appendChild(newMarkdownEl);
-
-		if (options.unifyTitleFormat) {
-			let title = await _MarkdownRendererInternal.getTitleForFile(
-				preview.file
-			);
-			let icon = await _MarkdownRendererInternal.getIconForFile(
-				preview.file
-			);
-			let iconSVG =
-				(await MarkdownRendererAPI.renderMarkdownSimple(icon.icon)) ??
-				icon.icon;
-			_MarkdownRendererInternal.addTitle(
-				options.container ?? newMarkdownEl,
-				title.title,
-				title.isDefault,
-				iconSVG,
-				icon.isDefault,
-				preview.file,
-				options
-			);
-		}
-
-		return newMarkdownEl;
+		// US-002 AC-3 (D7): every other note is rendered off screen; the
+		// reading view is never grown or re-rendered (it froze Obsidian, M05–M07)
+		return renderDetached(preview, options);
 	}
 
 	export async function renderSimpleMarkdown(markdown: string, container: HTMLElement) {
@@ -1084,7 +935,7 @@ export namespace _MarkdownRendererInternal {
 		return contentEl;
 	}
 
-	export async function postProcessHTML(html: HTMLElement, options: MarkdownRendererOptions) {
+	export async function postProcessHTML(html: HTMLElement, options: MarkdownRendererOptions, sourcePath: string = "") {
 		if (!html.classList.contains("obsidian-document")) {
 			const viewContainer = (html.classList.contains("view-content") || html.classList.contains("markdown-preview-view")) ? html : html.querySelector(".view-content, .markdown-preview-view");
 			if (!viewContainer) {
@@ -1105,21 +956,22 @@ export namespace _MarkdownRendererInternal {
 			element.classList.add("heading");
 		});
 
-		// transclusions put a div inside a p tag, which is invalid html. Fix it here
-		html.querySelectorAll("p:has(> .inline-embed.markdown-embed)").forEach((element) => {
-			const elParent = element.parentElement as HTMLElement;
-			const span = batchDocument.body.createEl("span");
-			span.style.display = "block";
-			span.style.marginBlockStart = "var(--p-spacing)";
-			span.style.marginBlockEnd = "var(--p-spacing)";
+		// US-002 AC-5: transclusions put a div inside a p tag, which is invalid
+		// html; replace such paragraphs, keeping each embed's own content
+		unwrapEmbedParagraphs(html);
 
-			span.innerHTML = element.innerHTML;
-			element.remove();
-			let embed = span.querySelector(".inline-embed.markdown-embed") as HTMLElement;
-			embed.innerHTML = elParent.innerHTML;
-			elParent.innerHTML = "";
-			elParent.appendChild(span);
-		});
+		// US-002 AC-7: an embed that still shows nothing gets a visible
+		// placeholder and a warning, unless its target is genuinely empty (D6)
+		const emptyTargets = new Set<string>();
+		for (const embed of Array.from(html.querySelectorAll(".markdown-embed")).filter(isEmptyEmbed)) {
+			const src = embed.getAttribute("src") ?? "";
+			const [linkpath, heading] = src.split("#");
+			const target = app.metadataCache.getFirstLinkpathDest(linkpath.replace(/^(\.\.\/)+/, "").replace(/\.md$/, ""), sourcePath);
+			if (target && isEmptyTarget(await app.vault.cachedRead(target), heading)) emptyTargets.add(src);
+		}
+		for (const warning of markUnexportedEmbeds(html, sourcePath, (target) => emptyTargets.has(target))) {
+			ExportLog.warning(warning.message);
+		}
 
 		// encode all text input values into attributes
 		html.querySelectorAll("input[type=text]").forEach((element: HTMLElement) => {
@@ -1174,7 +1026,9 @@ export namespace _MarkdownRendererInternal {
 		});
 
 		// move frontmatter before markdown-preview-sizer
-		const frontmatter = html.querySelector(".frontmatter");
+		// US-002 AC-14 (D10): only the page's own frontmatter moves; an embedded
+		// note's is removed (the unrestricted step emptied such embeds, measured)
+		const frontmatter = pageFrontmatter(html);
 		if (frontmatter) {
 			const frontmatterParent = frontmatter.parentElement;
 			const sizer = html.querySelector(".markdown-preview-sizer");
@@ -1183,6 +1037,7 @@ export namespace _MarkdownRendererInternal {
 			}
 			frontmatterParent?.remove();
 		}
+		removeEmbedFrontmatter(html);
 
 		// add lazy loading to iframe elements
 		html.querySelectorAll("iframe").forEach((element: HTMLIFrameElement) => {
