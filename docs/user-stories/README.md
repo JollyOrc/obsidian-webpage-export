@@ -17,4 +17,4 @@ stories; a story is written when the fork changes or relies on it.
 | ID | Title | Status | Tickets |
 |----|-------|--------|---------|
 | [US-001](US-001-tooling-fixture-and-headless-tests.md) | Quality gate, synthetic fixture vault, and tests in a headless Obsidian | Done (2026-10-30) | #1, #2, #3, #4 |
-| US-002 | Notes with embeds export completely; no note freezes or stalls the export (scope 2026-10-30) | Not written | — |
+| [US-002](US-002-complete-embeds-no-freeze.md) | Notes with embeds export completely; no note freezes the export | Done (2026-10-31; amendment 1, M10 passed) | #5, #6, #7, #8, #9, #10 |

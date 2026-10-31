@@ -64,7 +64,11 @@ tested against Obsidian's real renderer, without a manual run in my vault.
   *(Amended at G2, 2026-10-30: the G0 count 621 was over all of `src`
   including 143 findings in the generated `src/frontend/dist`; measured over
   the upstream sources without it: 478, with and without the build folder
-  present.)*
+  present.)* *(Baseline lowered to 477 at US-002 #6: replacing upstream's
+  p-tag block in `render-api.ts` removed one upstream finding; the examples
+  above keep their numbers as examples of the rule.)* *(Lowered to 465 at
+  US-002 #9: the removed reading-view main path and its now unused `Utils`
+  import took 12 findings of `render-api.ts` with them — 83 before, 71 after.)*
 
 - **AC-3 — Unit test runner.** `npm test` runs Vitest over `tests/unit` and
   `tests/tooling`; a test file `tests/unit/smoke.test.ts` with one passing
@@ -173,11 +177,18 @@ tested against Obsidian's real renderer, without a manual run in my vault.
   `empty map block` (SCAR-015). Assertions about embeds (F2 to F8) belong to
   US-002; US-001 only records them in the report.
 
-- **AC-14 — The fixture reproduces the defect it is for (SCAR-027).** With
-  `--runs 3`, F5 goes to the fallback in at least 1 of 3 runs, measured once
-  when the fixture is built and recorded in `docs/technical/tests.md` with
-  the date, Obsidian version and counts. If it never falls back, the story
-  is amended before tickets (the generator must change, not the threshold).
+- **AC-14 — Withdrawn (US-002 amendment 1, user decision 2026-10-31).**
+  US-002 D7/D9 render each note off screen and remove `maxPreviewHeight`;
+  the reading view's partial drawing, the defect this criterion reproduced,
+  can no longer reach an export. Its records stay in `tests.md`. *Was:*
+  **The fixture reproduces the defect it is for (SCAR-027).** With
+  `maxPreviewHeight: 1000` (the preview does not grow) and `--runs 3`,
+  `Composed/Big Page.md` has sections that are not drawn in at least 1 of 3
+  runs (run report warning `Not all sections drawn in Big Page.md`).
+  *(Amended at US-002 #6, 2026-10-30: the original criterion, "F5 goes to
+  the fallback in ≥ 1 of 3 runs", measured 3/3 and 2/3 before US-002, cannot
+  hold once US-002 removes the automatic fallback switch; the cause of the
+  defect — sections not drawn — is what the fixture keeps reproducing.)*
 
 ### Documentation
 
