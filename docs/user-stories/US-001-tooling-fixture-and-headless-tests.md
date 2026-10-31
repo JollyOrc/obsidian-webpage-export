@@ -89,7 +89,12 @@ tested against Obsidian's real renderer, without a manual run in my vault.
   upstream base commit (US-002 AC-9: `git diff 78c973d`; measured: in a
   shallow clone of one commit that test fails, the other 165 pass); the
   `docker-image` job does not run (`if: ${{ false }}`), so a release
-  publishes no image to GHCR.
+  publishes no image to GHCR. *(Amended 2026-10-31 after the first release
+  run, user decision:)* the build job runs on Node `26.x`, the version every
+  local gate ran on (on `20.x` the fixture generator, run as
+  `node tests/fixtures/generate.ts`, failed: no type stripping); and the
+  gate tests read tool output without ANSI colour codes (tools colour
+  their output under `GITHUB_ACTIONS`).
 
 ### Fixture vault
 

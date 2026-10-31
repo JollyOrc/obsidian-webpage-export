@@ -9,7 +9,21 @@ import { describe, expect, it } from 'vitest';
 const LIMIT = 60_000;
 
 const pkg = () => JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> };
-const npm = (script: string) => spawnSync('npm', ['run', '--silent', script], { encoding: 'utf8', timeout: LIMIT });
+/** ANSI colour codes (ESC [ … m); built from the char code, as a literal ESC in a regex is a lint error. */
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
+
+/**
+ * US-001 AC-1, AC-2: runs an npm script and returns its result with ANSI
+ * colour codes removed from stdout and stderr. Tools colour their output
+ * when they detect CI (`GITHUB_ACTIONS`; measured: prettier's `[warn]`
+ * became `[\x1b[33mwarn` in the release run of 2026-10-31), so the tests
+ * match the text, not the colouring.
+ */
+const npm = (script: string) => {
+	const r = spawnSync('npm', ['run', '--silent', script], { encoding: 'utf8', timeout: LIMIT });
+	const plain = (s: string | null): string => (s ?? '').replace(ANSI, '');
+	return { ...r, stdout: plain(r.stdout), stderr: plain(r.stderr) };
+};
 
 /**
  * Writes a probe file, runs `fn`, and removes the probe whatever happens
@@ -187,6 +201,15 @@ describe('US-001 AC-4: gate command and release workflows', () => {
 			const text = readFileSync(wf, 'utf8');
 			const build = text.slice(text.indexOf('\n  build:'), text.indexOf('\n  docker-image:'));
 			expect(build).toMatch(/- uses: actions\/checkout@v4\n {8}with:\n {10}fetch-depth: 0\n/);
+		});
+
+		it(`US-001 AC-4: ${wf} builds on Node 26.x, the version the gate is measured on`, () => {
+			// Amended 2026-10-31: on Node 20.x the gate failed in CI — the
+			// fixture generator runs as `node tests/fixtures/generate.ts`, which
+			// needs Node's built-in type stripping (measured locally on 26.12).
+			const text = readFileSync(wf, 'utf8');
+			const build = text.slice(text.indexOf('\n  build:'), text.indexOf('\n  docker-image:'));
+			expect(build).toMatch(/\n {10}node-version: "26\.x"\n/);
 		});
 
 		it(`US-001 AC-4: ${wf} does not run the docker-image job (no image is published)`, () => {

@@ -7,7 +7,11 @@
 - Node and npm; `npm install`, then `npm run build`
   (`tsc -noEmit -skipLibCheck && node esbuild.config.mjs production`).
 - `npm run dev` builds in watch mode.
-- Tests (US-001): `npm test` needs Node ≥ 20 (Vitest 3.2.7);
+- Tests (US-001): `npm test` needs a Node that runs `.ts` files directly
+  (type stripping; the fixture generator runs as `node tests/fixtures/generate.ts`).
+  Measured on Node 26.12; the release workflows use `26.x`. On Node 20 the
+  generator fails (`ERR_UNKNOWN_FILE_EXTENSION`, release run 2026-10-31);
+  versions between are not measured. Vitest 3.2.7;
   `npm run test:integration` needs Docker with BuildKit (measured with
   Docker 29.9.2, arm64). The test image is upstream's `Dockerfile` built with
   `--build-arg OBSIDIAN_VERSION=1.14.5` (Obsidian 1.14.5, the author's app;
@@ -87,7 +91,7 @@ and git-ignored:
 | `tsconfig.json` | `include` narrowed from `**/*.ts` to `src/**/*.ts` (tests and tools are type-checked by `tsconfig.strict.json`, US-001 AC-1) | US-001 |
 | `package.json` | devDependencies vitest, prettier, @types/node 20.19.9; dependency postcss pinned exact | US-001 |
 | `eslint.config.mjs` | upstream entries unchanged; added global ignores (`tests/fixtures/vault/**`, `tests/.output/**`) and the strict block for `src/core`, `tests`, `tools` (upstream count stays 478) | US-001 |
-| `.github/workflows/release.yaml`, `beta-release.yaml` | `npm ci` + `npm run gate:release` instead of `npm install` + `npm run build`; build job checks out with `fetch-depth: 0` (the gate reads the upstream base commit); `docker-image` `needs: build` and `if: ${{ false }}` (no image published) | US-001 (#1, #11) |
+| `.github/workflows/release.yaml`, `beta-release.yaml` | `npm ci` + `npm run gate:release` instead of `npm install` + `npm run build`; build job checks out with `fetch-depth: 0` (the gate reads the upstream base commit) and runs on Node `26.x`; `docker-image` `needs: build` and `if: ${{ false }}` (no image published) | US-001 (#1, #11) |
 | `src/plugin/render-api/render-api.ts` | Main path (`renderMarkdownView`): `useFallbackRenderer` goes to the fallback, every other note to the new `renderDetached` (Obsidian's `MarkdownRenderer.render` into an off-screen element, wait for embeds and plugin blocks, Dataview and canvas as upstream, `addPreviewMarks`, `wrapSections`, `documentClass`); the reading-view main path after the fallback check and its now unused `Utils` import removed (no automatic fallback, no growth); `resolveEmbedSubpath` for the marks; fallback: waits until every embed has content; `postProcessHTML`: `unwrapEmbedParagraphs` replaces the p-tag block, `markUnexportedEmbeds` with an empty-target check, the frontmatter step takes `pageFrontmatter` and `removeEmbedFrontmatter` removes embedded frontmatter, optional `sourcePath` parameter (passed by `renderFile`) | US-002 (#5, #6, #9) |
 | `Dockerfile` | `ARG PLUGIN_STAGE=plugin` (default: build inside, as upstream) and stage `plugin-local` (BuildKit context `localplugin`); final copy from `plugin-final` | US-001 |
 | `.gitignore` | `tests/fixtures/vault/.obsidian/plugins/`, `tests/.output/`, `docs/state/` | US-001, set-up |
