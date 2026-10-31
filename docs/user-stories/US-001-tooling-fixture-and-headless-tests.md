@@ -83,7 +83,13 @@ tested against Obsidian's real renderer, without a manual run in my vault.
   `actions/create-release`; a red step means no release asset is uploaded.
   Their `docker-image` job (publishes to GHCR) gets `needs: build`, so it
   does not publish after a red gate either *(amended at G2, 2026-10-30: the
-  job had no `needs:`)*.
+  job had no `needs:`)*. *(Amended 2026-10-31, before the first release,
+  user decisions:)* the `build` job checks out the full history
+  (`actions/checkout` with `fetch-depth: 0`), because the gate reads the
+  upstream base commit (US-002 AC-9: `git diff 78c973d`; measured: in a
+  shallow clone of one commit that test fails, the other 165 pass); the
+  `docker-image` job does not run (`if: ${{ false }}`), so a release
+  publishes no image to GHCR.
 
 ### Fixture vault
 

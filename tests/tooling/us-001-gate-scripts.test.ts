@@ -180,5 +180,19 @@ describe('US-001 AC-4: gate command and release workflows', () => {
 			const job = text.slice(text.indexOf('\n  docker-image:'));
 			expect(job).toMatch(/\n {4}needs: build\n/);
 		});
+
+		it(`US-001 AC-4: ${wf} checks out the full history in the build job (the gate reads the upstream base commit)`, () => {
+			// Amended 2026-10-31: the default shallow clone (one commit) makes
+			// US-002 AC-9's `git diff 78c973d` fail (measured).
+			const text = readFileSync(wf, 'utf8');
+			const build = text.slice(text.indexOf('\n  build:'), text.indexOf('\n  docker-image:'));
+			expect(build).toMatch(/- uses: actions\/checkout@v4\n {8}with:\n {10}fetch-depth: 0\n/);
+		});
+
+		it(`US-001 AC-4: ${wf} does not run the docker-image job (no image is published)`, () => {
+			const text = readFileSync(wf, 'utf8');
+			const job = text.slice(text.indexOf('\n  docker-image:'));
+			expect(job).toMatch(/^\n {2}docker-image:\n {4}if: \$\{\{ false \}\}\n/);
+		});
 	}
 });
