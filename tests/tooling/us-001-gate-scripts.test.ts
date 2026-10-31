@@ -212,6 +212,16 @@ describe('US-001 AC-4: gate command and release workflows', () => {
 			expect(build).toMatch(/\n {10}node-version: "26\.x"\n/);
 		});
 
+		it(`US-001 AC-4: ${wf} gives only the build job write access, to contents only`, () => {
+			// Amended 2026-10-31: the fork's default token is read-only; the
+			// second release run passed its gate and failed at "Create Release"
+			// ("Resource not accessible by integration").
+			const text = readFileSync(wf, 'utf8');
+			const build = text.slice(text.indexOf('\n  build:'), text.indexOf('\n  docker-image:'));
+			expect(build).toMatch(/\n {4}runs-on: ubuntu-latest\n {4}permissions:\n {6}contents: write\n\n/);
+			expect(text.slice(0, text.indexOf('\njobs:'))).not.toMatch(/permissions:/);
+		});
+
 		it(`US-001 AC-4: ${wf} does not run the docker-image job (no image is published)`, () => {
 			const text = readFileSync(wf, 'utf8');
 			const job = text.slice(text.indexOf('\n  docker-image:'));

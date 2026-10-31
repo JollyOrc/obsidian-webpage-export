@@ -94,7 +94,11 @@ tested against Obsidian's real renderer, without a manual run in my vault.
   local gate ran on (on `20.x` the fixture generator, run as
   `node tests/fixtures/generate.ts`, failed: no type stripping); and the
   gate tests read tool output without ANSI colour codes (tools colour
-  their output under `GITHUB_ACTIONS`).
+  their output under `GITHUB_ACTIONS`). *(Amended 2026-10-31 after the
+  second release run, user decision:)* the build job declares
+  `permissions: contents: write` (the fork's default token is read-only;
+  the run passed its gate and failed at "Create Release"); no other job and
+  no workflow-wide block gets a permission.
 
 ### Fixture vault
 
