@@ -1,0 +1,3 @@
+[submodule "scars"]
+	path = scars
+	url = https://github.com/JollyOrc/scars.git

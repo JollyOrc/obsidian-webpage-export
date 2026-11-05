@@ -54,15 +54,22 @@ Follow this order strictly — do not skip ahead:
 0. **SCAR review** — before touching any user story, test, or code, read
    `scars/README.md` and every SCAR file under `scars/`. Check the new
    instructions or user story against the Prevention list of every SCAR. The
-   index in `scars/README.md` is the checklist: it lists every SCAR and, in
-   its "Gates" column, the gates (rule 9) at which it is checked again.
+   index in `scars/README.md` lists every SCAR; `docs/process/scar-gates.md`
+   is the checklist of the gates (rule 9) at which each is checked again.
    Flag any gap to the user before proceeding; do not paper over it with a
    guess or a TODO.
 
    **After** a problem is resolved or a requirement is refined, ask: can the
    root cause be generalised beyond this specific case? If yes, add a new SCAR
-   to `scars/` (following the existing format) and add it to the index in
-   `scars/README.md` with its gates.
+   in the shared repository (following the existing format), add it to its
+   index, and add its gates to `docs/process/scar-gates.md`. The SCARs are shared with the other
+   two plugins: `scars/` is the git submodule of
+   <https://github.com/JollyOrc/scars>. Edit SCARs only there, never in
+   `scars/`, then `git submodule update --remote scars` and commit the new
+   pointer. A new SCAR takes the next free number.
+   Numbers changed on 2026-11-05 (this project's SCAR-031 to 034 are now
+   SCAR-042 to 045); history keeps the old numbers, mapped in
+   `scars/README.md`.
    A SCAR is warranted when the same underlying failure mode could recur on
    any future feature, not just the one just fixed.
 
