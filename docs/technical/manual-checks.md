@@ -17,3 +17,4 @@ place where it runs (SCAR-012), and states the content the output must show
 | [M08](manual-checks/M08.md) | Export with the detached renderer on the desktop (spike build) | — (US-002 freeze diagnosis) |
 | [M09](manual-checks/M09.md) | Detached renderer with section wrappers on the desktop (spike build) | — (US-002 freeze diagnosis) |
 | [M10](manual-checks/M10.md) | The detached renderer in the author's vault, full export (build `1.9.2-roa.3`) | US-002 AC-8 (amendment 1) |
+| [M11](manual-checks/M11.md) | Why a dataviewjs view's output is missing from some pages: instrumented view, three exports (build `1.10.0`) | — (G0 measurement for #12) |
