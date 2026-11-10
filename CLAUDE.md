@@ -28,9 +28,11 @@ sibling plugins `../Obsidian2Typst` and `../ObsidianVaultCompiler`. Code
 reused from other projects is listed in `docs/technical/dependencies.md` with
 its origin, and keeps its documented transforms (SCAR-001).
 
-The vault `Raiders of Arismyth Rules` in this location is a **working copy**
-of the author's original (user statement 2026-10-30): Claude may change it for
-measurements and manual checks under the conditions of rule 2 below. No
+The vault `Raiders of Arismyth Rules` in this location is the author's
+**working vault**: the one the author works in, and the working copy of the
+2026-10-30 decisions (user statement 2026-11-10). Claude may change it for
+measurements and manual checks only under the conditions of rule 2 below;
+every change touches the author's own working state. No
 automated test reads it; automated tests use the generated synthetic fixture
 vault `tests/fixtures/vault/` (US-001; changed only through its generator).
 
@@ -79,7 +81,8 @@ SCAR-042 to 045); history keeps the old numbers, mapped in `scars/README.md`.
 - **Rule 2.** The exporter never modifies the user's notes, attachments or
   plugin data, and a fixture vault changes only through its generator.
   Generated HTML and asset files go only to the configured export folder.
-  **Working-copy vault (user decisions 2026-10-30):** Claude may change the
+  **Working vault (user decisions 2026-10-30; the vault the author works in,
+  user statement 2026-11-10):** Claude may change the
   vault `Raiders of Arismyth Rules` (notes, settings, `data.json`, installed
   builds) for measurements and manual checks, when Obsidian is not running
   (it overwrites `data.json`), after a snapshot with a checksum list exists
