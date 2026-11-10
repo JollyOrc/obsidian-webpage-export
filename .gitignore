@@ -43,3 +43,6 @@ docs/state/
 !tests/fixtures/vault/
 tests/fixtures/vault/.obsidian/plugins/
 tests/.output/
+
+# private local instructions, never published
+CLAUDE.local.md
