@@ -111,13 +111,13 @@ describe('US-002 default export (3 runs)', () => {
 				embeds += doc.querySelectorAll('.markdown-embed').length;
 				expect(doc.querySelectorAll('.markdown-embed .markdown-preview-sizer').length, n).toBe(0);
 			}
-			expect(embeds, 'embeds checked').toBe(28);
+			expect(embeds, 'embeds checked').toBe(31); // US-004: +3 embeds of Step Card (S3, S6)
 		}
 	});
 
 	it('US-002 AC-4: no exported fixture page has a <div> inside a <p>', () => {
 		const notes = Object.keys(expected());
-		expect(notes.length).toBe(28);
+		expect(notes.length).toBe(36); // US-004: +8 notes S1–S8
 		for (let i = 0; i < 3; i++) for (const n of notes) expect(divsInsideParagraphs(html(base, i, n)), n).toBe(0);
 	});
 
@@ -221,7 +221,7 @@ describe('US-002 AC-11 to AC-15: the detached output (default export, 3 runs)', 
 		}
 	});
 
-	it('US-002 AC-12: fixture totals as the preview: 23 arrows, 28 embed icons, 10 heading embeds; Big Page title has none', () => {
+	it('US-002 AC-12: fixture totals as the preview: 23 arrows, 31 embed icons, 10 heading embeds; Big Page title has none', () => {
 		for (let i = 0; i < 3; i++) {
 			let arrows = 0;
 			let icons = 0;
@@ -234,7 +234,7 @@ describe('US-002 AC-11 to AC-15: the detached output (default export, 3 runs)', 
 				icons += d.querySelectorAll('.markdown-embed > .markdown-embed-link').length;
 				heading += d.querySelectorAll('.markdown-embed[data-type="heading"]').length;
 			}
-			expect({ arrows, icons, heading }).toEqual({ arrows: 23, icons: 28, heading: 10 });
+			expect({ arrows, icons, heading }).toEqual({ arrows: 23, icons: 31, heading: 10 });
 			const big = docOf(base, i, 'Composed/Big Page.md');
 			expect(big.querySelectorAll('.page-title .heading-collapse-indicator')).toHaveLength(0);
 		}

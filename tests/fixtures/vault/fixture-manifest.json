@@ -176,6 +176,55 @@
 		{
 			"path": "Plain/Snippet.md",
 			"constructs": {}
+		},
+		{
+			"path": "Steps/Embed Step Card.md",
+			"constructs": {
+				"wikilinkEmbeds": 1
+			}
+		},
+		{
+			"path": "Steps/Step Block In Callout.md",
+			"constructs": {
+				"callouts": 1,
+				"fxStepBlocks": 1
+			}
+		},
+		{
+			"path": "Steps/Step Block.md",
+			"constructs": {
+				"fxStepBlocks": 1
+			}
+		},
+		{
+			"path": "Steps/Step Card Twice.md",
+			"constructs": {
+				"wikilinkEmbeds": 2
+			}
+		},
+		{
+			"path": "Steps/Step Card.md",
+			"constructs": {
+				"fxStepBlocks": 1
+			}
+		},
+		{
+			"path": "Steps/Step Forever.md",
+			"constructs": {
+				"fxStepBlocks": 1
+			}
+		},
+		{
+			"path": "Steps/Step Nothing.md",
+			"constructs": {
+				"fxStepBlocks": 1
+			}
+		},
+		{
+			"path": "Steps/Two Step Blocks.md",
+			"constructs": {
+				"fxStepBlocks": 2
+			}
 		}
 	]
 }

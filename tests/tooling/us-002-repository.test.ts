@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { functionBody, RENDER_API } from '../support/function-body';
 
 // US-002 AC-8 (the manual check exists as its own file) and AC-9 (small
 // upstream diff; pure core).
@@ -9,20 +10,6 @@ import { describe, expect, it } from 'vitest';
 const UPSTREAM_BASE = '78c973d';
 // Amendment 1 (D9): api-options.ts is no longer changed.
 const ALLOWED = ['src/plugin/render-api/render-api.ts'];
-const RENDER_API = 'src/plugin/render-api/render-api.ts';
-
-/**
- * The text of the function `name` in render-api.ts, from its declaration to
- * the closing brace at the declaration's indentation (upstream's style: tabs).
- */
-function functionBody(name: string): string {
-	const src = readFileSync(RENDER_API, 'utf8');
-	const start = src.search(new RegExp(`\\n(\\t*)(?:export )?async function ${name}\\(`));
-	if (start < 0) return '';
-	const indent = /\n(\t*)/.exec(src.slice(start))?.[1] ?? '';
-	const end = src.indexOf(`\n${indent}}\n`, start + 1);
-	return src.slice(start, end < 0 ? src.length : end);
-}
 
 describe('US-002 AC-9: upstream diff and pure core', () => {
 	it('US-002 AC-9: the only changed upstream file is render-api.ts (api-options.ts back to upstream, D9)', () => {
@@ -84,12 +71,14 @@ describe('US-002 AC-3, AC-15: the main path renders detached', () => {
 		expect(body).not.toMatch(/preview\.rerender\(/);
 	});
 
-	it('US-002 AC-3: renderDetached renders with MarkdownRenderer.render, waits 50 ms / 5 000 ms, warns empty plugin blocks', () => {
+	// US-004 supersedes AC-3's plugin-block rule: the 50 ms poll and the 5 000 ms
+	// limit stay (as a literal or US-004's LIMIT_MS); upstream's "not rendered
+	// correctly" warning is replaced by US-004 AC-4 (tests/tooling/us-004-repository.test.ts).
+	it('US-002 AC-3: renderDetached renders with MarkdownRenderer.render and waits with a 50 ms poll, at most 5 000 ms', () => {
 		const body = functionBody('renderDetached');
 		expect(body.length, 'renderDetached found').toBeGreaterThan(0);
 		expect(body).toMatch(/ObsidianRenderer\.render\(app, [^)]+, file\.path, /);
-		expect(body).toMatch(/waitUntil\([\s\S]*?, 5000, 50\)/);
-		expect(body).toContain('not rendered correctly!');
+		expect(body).toMatch(/waitUntil\([\s\S]*?, (?:5000|LIMIT_MS), 50\)/);
 		expect(body).toMatch(/wrapSections\(/);
 		expect(body).toMatch(/addPreviewMarks\(/);
 		expect(body).toMatch(/documentClass\(/);

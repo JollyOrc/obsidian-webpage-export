@@ -78,6 +78,13 @@ and git-ignored:
 | Text Mapper (`modality/obsidian-text-mapper`) | 1.1.0 | MIT | main.js `64dfc867…`, manifest.json `35ddf54f…` |
 | Meta Bind (`mProjectsCode/obsidian-meta-bind-plugin`) | 1.5.1 | GPL-3.0 | main.js `d328bfaa…`, manifest.json `3c1dff1e…`, styles.css `97069e18…` |
 
+The fixture's own plugin `fx-steps` (US-004 AC-6) is not a dependency: the
+generator writes its `main.js` and `manifest.json` into
+`.obsidian/plugins/fx-steps/` on every run (git-ignored like the folder) and
+enables it in `community-plugins.json`. It draws `fx-steps` code blocks in
+steps (a `<style>` first, then the output), requires only `obsidian`, and has
+no third-party code.
+
 ## Code reused from sibling projects
 
 | File here | Origin | Commit | Notes |
