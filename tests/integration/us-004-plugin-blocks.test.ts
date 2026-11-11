@@ -23,7 +23,9 @@ const docOf = (r: HeadlessResult, run: number, note: string): Document =>
 	new JSDOM(readFileSync(join(r.runs[run].outputDir, pagePath(note)), 'utf8')).window.document;
 const warnings = (r: HeadlessResult, run: number): string[] => {
 	const rep = r.runs[run].report;
-	return rep.ok ? rep.report.warnings : [];
+	// ExportLog writes `[WARNING]   <message>` to the console (measured in the
+	// run reports, 2026-11-11); the prefix is removed before matching.
+	return rep.ok ? rep.report.warnings.map((w) => w.replace(/^\[WARNING\]\s+/, '')) : [];
 };
 /** The `fx-steps` blocks of a page, in page order. */
 const blocksOf = (d: Document): Element[] => Array.from(d.querySelectorAll('.block-language-fx-steps'));

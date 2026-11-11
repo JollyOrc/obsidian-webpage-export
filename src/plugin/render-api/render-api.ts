@@ -16,6 +16,7 @@ import { isEmptyTarget } from "src/core/embeds/empty-target";
 import { wrapSections } from "src/core/render/sections";
 import { addPreviewMarks, documentClass, SubpathKind } from "src/core/render/marks";
 import { pageFrontmatter, removeEmbedFrontmatter } from "src/core/render/frontmatter";
+import { decideCopy, hasOutput, LIMIT_MS, unfinishedWarning, type CopyDecision } from "src/core/render/blocks";
 
 export namespace MarkdownRendererAPI {
 	export const viewableMediaExtensions = ["png", "jpg", "jpeg", "svg", "gif", "bmp", "ico", "mp4", "mov", "avi", "webm", "mpeg", "mp3", "wav", "ogg", "aac", "pdf", "html", "htm", "json", "txt", "yaml"];
@@ -450,8 +451,10 @@ export namespace _MarkdownRendererInternal {
 	 * The render goes into a host element placed at left -100 000 px, 900 px
 	 * wide, never into the reading view (D7: growing the reading view froze
 	 * Obsidian, M05 to M07). Then, in this order: wait until no embed is empty
-	 * and no plugin block is empty (poll 50 ms, at most 5 000 ms; what stays
-	 * empty is AC-7's placeholder or upstream's plugin-block warning); Dataview
+	 * and every plugin block has finished by US-004's rules (output, then no
+	 * change for 150 ms; a MutationObserver records each block's last change;
+	 * poll 50 ms, at most 5 000 ms; what stays empty is AC-7's placeholder, an
+	 * unfinished block gets US-004 AC-4's warning); Dataview
 	 * and canvas handling as upstream's main path; the reading view's marks
 	 * (`addPreviewMarks`); the copy into a sizer with section wrappers
 	 * (`wrapSections`, nodes cloned); host and component removed; title as
@@ -478,15 +481,41 @@ export namespace _MarkdownRendererInternal {
 		try {
 			await ObsidianRenderer.render(app, markdown, host, file.path, component);
 
-			// US-002 AC-3: embeds and plugin blocks fill in after the render returns
-			const pending = () =>
-				Array.from(host.querySelectorAll(".markdown-embed")).filter(isEmptyEmbed).length +
-				host.querySelectorAll("[class^='block-language-']:empty").length;
-			await waitUntil(() => pending() === 0 || checkCancelled(), 5000, 50);
+			// US-002 AC-3, US-004 AC-1, AC-2: embeds and plugin blocks fill in after
+			// the render returns; a block counts as finished when it has output and
+			// has not changed for QUIET_MS (decisions in src/core/render/blocks).
+			const start = Date.now();
+			const blockSelector = "[class^='block-language-']";
+			const lastChange = new Map<Element, number>();
+			const observer = new MutationObserver((mutations) => {
+				for (const m of mutations) {
+					const target = m.target instanceof Element ? m.target : m.target.parentElement;
+					const block = target?.closest(blockSelector);
+					if (block) lastChange.set(block, Date.now());
+				}
+			});
+			observer.observe(host, { childList: true, attributes: true, characterData: true, subtree: true });
+			// assigned inside `ready`; the assertion keeps the full union type for the checks after the wait
+			let decision = { action: "wait" } as CopyDecision;
+			const embedsPending = () => Array.from(host.querySelectorAll(".markdown-embed")).filter(isEmptyEmbed).length;
+			const ready = (now: number = Date.now()) => {
+				const blocks = Array.from(host.querySelectorAll(blockSelector));
+				decision = decideCopy(
+					blocks.map((b) => ({ firstClass: b.classList[0] ?? "", hasOutput: hasOutput(b), lastChange: lastChange.get(b) ?? start })),
+					now,
+					start,
+				);
+				return embedsPending() === 0 && decision.action !== "wait";
+			};
+			await waitUntil(() => ready() || checkCancelled(), LIMIT_MS, 50);
+			observer.disconnect();
 			if (checkCancelled()) return undefined;
+			// waitUntil's own timer starts after `start`; at its timeout the limit has passed
+			if (decision.action === "wait") ready(Math.max(Date.now(), start + LIMIT_MS));
 
-			for (const block of Array.from(host.querySelectorAll("[class^='block-language-']:empty"))) {
-				ExportLog.warning(`Plugin element ${block.className || block.parentElement?.className || "unknown"} from ${file.name} not rendered correctly!`);
+			// US-004 AC-4: one warning per block that did not finish (replaces upstream's "not rendered correctly")
+			if (decision.action === "limit") {
+				for (const u of decision.unfinished) ExportLog.warning(unfinishedWarning(u.firstClass, file.path, u.reason));
 			}
 
 			// compile dataview

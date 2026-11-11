@@ -1,8 +1,8 @@
 # US-004 — A page is copied only after its plugin blocks have finished drawing
 
-**Status:** Ready (2026-11-11, by the user; D1–D5 decided the same day)
+**Status:** Done (2026-11-11; M12 passed). Before: Ready (2026-11-11, by the user; D1–D5 decided the same day)
 **Introduced:** —
-**Implemented:** —
+**Implemented:** 2026-11-11 (#15, #16; manual check M12, #17)
 **Supersedes:** US-002 AC-3, only its rule for when a plugin block counts as
 rendered ("no `[class^='block-language-']` element is empty"). The rest of
 US-002 AC-3 (off-screen render, 50 ms poll, embeds by AC-7's rule) stays.
@@ -141,5 +141,7 @@ block that never finishes is announced instead of silently missing.
 
 ## Related tickets
 
-<!-- Fill in once the ticket issues are created (step 3). -->
 - [#12](https://github.com/JollyOrc/obsidian-webpage-export/issues/12) — the request (bug report)
+- [#15](https://github.com/JollyOrc/obsidian-webpage-export/issues/15) — core: plugin-block rules in `src/core/render/blocks.ts` (AC-1, AC-2, AC-4, AC-5)
+- [#16](https://github.com/JollyOrc/obsidian-webpage-export/issues/16) — render path: `renderDetached` waits by the core rules; US-004 warning (AC-1–AC-6)
+- [#17](https://github.com/JollyOrc/obsidian-webpage-export/issues/17) — manual check M12 on the desktop (AC-7, AC-5)
