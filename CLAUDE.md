@@ -46,6 +46,14 @@ two sibling plugins and live in the SCARs repository:
 
 What follows is specific to this project and refines the shared rules.
 
+Shared knowledge about Obsidian plugins (API findings and pitfalls, past
+problems, tooling, and the **preferred UI standard**) lives in
+<https://github.com/JollyOrc/ObsidianKnowledge> (local clone
+`~/Documents/ObsidianKnowledge`). Read the files that touch the work at
+step 0; a new or changed screen, dialog, menu or notice follows its
+`ui-standard.md`. A fact about Obsidian learned here goes there; a general
+failure mode goes to a SCAR.
+
 ## Where things are
 
 - `docs/state/` — the `init.d` state (rules 9 and 10): governance, the SCAR
